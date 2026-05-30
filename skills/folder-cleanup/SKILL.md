@@ -32,10 +32,10 @@ Before touching anything, gather:
 
 1. **Target root.** Absolute path to the folder to clean. Confirm it's a single client/engagement, not the whole `Clients and Prospects` tree.
 2. **Sync status.** Is this OneDrive/SharePoint synced locally, or are they pointing me at a network drive? If OneDrive, check `attrib` (Windows) or extended attrs for cloud-only files. Don't force-hydrate large cloud-only files just to hash them — flag and ask.
-3. **Taxonomy.** Read `references/pba-taxonomy.md`. Ask the user to confirm or override the target structure for this engagement. Capture deviations they want preserved (e.g., "leave the M&A subfolder alone, that's the deal team's").
+3. **Taxonomy discovery.** PBA has no codified taxonomy yet — each engagement has its own working structure. Before proposing any moves, do a structural pass and show the user what you found. Read `references/taxonomy-discovery.md` for the workflow. Ask: "Is this the structure we tidy toward, or do you want to reorganize this client to something else?" Capture the answer in the plan header.
 4. **Scope guards.** Confirm:
    - Year boundary (clean only 2024, or all years?)
-   - Anything off-limits (signed engagement letters, e-filed returns, originals)
+   - Anything off-limits (signed engagement letters, e-filed returns, originals, deal-team subfolders, external-collab folders)
    - Whether to consider `_Archive/` from a previous run as a source (default: ignore)
 
 If any of these are unclear, ask once with a concrete proposed default rather than peppering the user.
@@ -47,7 +47,6 @@ Run the analyzer to walk the tree, classify files, detect duplicates and sync co
 ```bash
 python <skill-dir>/scripts/cleanup.py analyze \
     --root "<absolute-path-to-client-folder>" \
-    --taxonomy <skill-dir>/references/pba-taxonomy.md \
     --plan-out "<root>/_cleanup_plan.md" \
     --plan-json "<root>/_cleanup_plan.json"
 ```
@@ -125,7 +124,7 @@ Reverses every move recorded in the log. Files in `_Archive/` go back to their o
 
 Load these on demand, not all upfront:
 
-- `references/pba-taxonomy.md` — Target folder structure for PBA engagements. **Edit this file to reflect the current standard** before running on a real client; the version in the repo is a starting template.
+- `references/taxonomy-discovery.md` — How to discover an engagement's working structure during Phase 0, since PBA has no global taxonomy. Read before proposing any reorganization.
 - `references/classification-rules.md` — Patterns for detecting duplicates, sync conflicts, periods, and document categories. Read when the user asks why something was classified a certain way, or when adding new rules.
 - `references/onedrive-sharepoint-gotchas.md` — Path length limits, illegal characters, lock files, cloud-only files, sync conflict patterns. Read before any execute against a OneDrive/SharePoint path.
 
@@ -134,6 +133,7 @@ Load these on demand, not all upfront:
 - Not a backup tool. The user is responsible for OneDrive version history / their own backups before a large run.
 - Not a content classifier — it does not open Excel or PDF files to read their contents. Classification is filename + extension + path-based. If filename-based classification can't decide, the file goes to `needs-human` for the user to call.
 - Not for cross-client work. Run it once per client folder.
+- **Not a tree-imposer.** Without a codified PBA taxonomy, the script does not propose target subfolders for unclassified files. Duplicates, sync conflicts, and sensitive files are handled deterministically; everything else is surfaced as `needs-human` so you and the client decide structure together.
 
 ## Sensitive matters
 

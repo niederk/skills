@@ -425,23 +425,21 @@ def propose_actions(root: Path, records: list[FileRecord]) -> list[Action]:
                 sha256=r.sha256, size=r.size,
             )
 
-    # 4) Files Claude does not have a confident move for default to a non-action
+    # 4) Without a codified taxonomy, surface anything not handled above to
+    # the conductor for a per-file conversation with the user.
     handled = {a.src for a in actions}
     for r in records:
         if r.abs_path in handled:
             continue
-        # No proposed taxonomy-driven move from the script — that's a
-        # conversation-driven step. Surface unclassified files so the
-        # conductor can ask the user.
-        if not r.category:
-            add(
-                kind="needs-human",
-                src=r.abs_path,
-                dst=None,
-                reason="no category match; conductor to classify with user",
-                rule="unclassified",
-                sha256=r.sha256, size=r.size,
-            )
+        add(
+            kind="needs-human",
+            src=r.abs_path,
+            dst=None,
+            reason=(f"category={r.category}; conductor to confirm destination with user"
+                    if r.category else "no category match; conductor to classify with user"),
+            rule="needs-human-no-taxonomy",
+            sha256=r.sha256, size=r.size,
+        )
 
     return actions
 
@@ -733,7 +731,6 @@ def main(argv: list[str] | None = None) -> int:
 
     a = sub.add_parser("analyze", help="Walk and plan")
     a.add_argument("--root", required=True)
-    a.add_argument("--taxonomy", required=False, help="Path to taxonomy reference (informational)")
     a.add_argument("--plan-out", required=True)
     a.add_argument("--plan-json", required=True)
     a.add_argument("--hash-cap-mb", type=int, default=500)
